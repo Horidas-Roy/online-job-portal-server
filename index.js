@@ -10,7 +10,7 @@ app.use(cors())
 app.use(express.json())
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wcearye.mongodb.net/?retryWrites=true&w=majority`;
 
 
@@ -28,9 +28,26 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    app.get()
+    const categoryCollection=client.db('categorydb').collection('categoryItem')
 
+    app.get('/category',async(req,res)=>{
+         const result=await categoryCollection.find().toArray()
+         res.send(result)
+    })
 
+    app.get('/category/:categoryName',async(req,res)=>{
+         const category=req.params.categoryName;
+         const query={category:category}
+         const result=await categoryCollection.find(query).toArray()
+         res.send(result)
+    })
+
+    app.get('/jobs/:id',async(req,res)=>{
+        const id=req.params.id;
+        const query={_id:new ObjectId(id)}
+        const result=await categoryCollection.findOne(query)
+        res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
@@ -43,6 +60,9 @@ async function run() {
 }
 run().catch(console.dir);
 
+app.get('/',async(req,res)=>{
+    res.send("Online job portal is running")
+})
 
 
 app.listen(port,()=>{
