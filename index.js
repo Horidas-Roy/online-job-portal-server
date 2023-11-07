@@ -29,6 +29,7 @@ async function run() {
     await client.connect();
 
     const categoryCollection=client.db('categorydb').collection('categoryItem')
+    const bidsCollection=client.db('categorydb').collection('bids')
 
     app.get('/category',async(req,res)=>{
          const result=await categoryCollection.find().toArray()
@@ -49,6 +50,19 @@ async function run() {
         res.send(result)
     })
 
+    // bids related api
+
+    app.get('/bids',async(req,res)=>{
+       const result=await bidsCollection.find().toArray();
+       console.log(result)
+       res.send(result)
+    })
+    
+    app.post('/bids',async(req,res)=>{
+       const bid=req.body;
+       const result=await bidsCollection.insertOne(bid);
+       res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
