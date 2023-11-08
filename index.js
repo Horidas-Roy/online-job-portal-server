@@ -29,7 +29,7 @@ async function run() {
     await client.connect();
 
     const categoryCollection=client.db('categorydb').collection('categoryItem')
-    const bidsCollection=client.db('categorydb').collection('bids')
+    // const bidsCollection=client.db('categorydb').collection('bids')
 
     app.get('/category',async(req,res)=>{
          const result=await categoryCollection.find().toArray()
@@ -53,15 +53,43 @@ async function run() {
     // bids related api
 
     app.get('/bids',async(req,res)=>{
-       const result=await bidsCollection.find().toArray();
+       const result=await categoryCollection.find().toArray();
        console.log(result)
        res.send(result)
     })
     
     app.post('/bids',async(req,res)=>{
        const bid=req.body;
-       const result=await bidsCollection.insertOne(bid);
+       const result=await categoryCollection.insertOne(bid);
        res.send(result);
+    })
+
+    app.get('/bids/:userEmail',async(req,res)=>{
+      const userEmail=req.params.userEmail;
+      const query={applicant:userEmail}
+      const result=await categoryCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.get('/bidReq/:userEmail',async(req,res)=>{
+       const userEmail=req.params.userEmail
+       const query={employer:userEmail}
+       const result=await categoryCollection.find(query).toArray()
+       res.send(result)
+    })
+    app.get('/postedJobs/:userEmail',async(req,res)=>{
+       const userEmail=req.params.userEmail
+       const query={employer:userEmail}
+       const result=await categoryCollection.find(query).toArray()
+       res.send(result)
+    })
+    // add job page related api
+
+    app.post('/addJob',async(req,res)=>{
+       const job=req.body;
+       console.log(job);
+       const result=await categoryCollection.insertOne(job)
+       res.send(result)
     })
 
     // Send a ping to confirm a successful connection
