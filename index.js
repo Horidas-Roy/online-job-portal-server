@@ -1,13 +1,23 @@
 const express=require('express')
 const cors=require('cors')
+var jwt = require('jsonwebtoken');
+var cookieParser = require('cookie-parser')
 require('dotenv').config()
 const app=express()
 const port=process.env.PORT || 5000 ;
 
 
 // middleware
-app.use(cors())
+app.use(cors({
+   origin: [
+    'http://localhost:5173',
+    'https://online-job-portal-9c2d1.web.app',
+    'https://online-job-portal-9c2d1.firebaseapp.com'
+  ],
+   credentials:true,
+}))
 app.use(express.json())
+app.use(cookieParser())
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -26,11 +36,45 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const categoryCollection=client.db('categorydb').collection('categoryItem')
-    // const bidsCollection=client.db('categorydb').collection('bids')
+    const bidsCollection=client.db('categorydb').collection('bids')
+    
 
+  //  auth related api
+
+   app.post('/jwt',async(req,res)=>{
+        try{
+          const user=req.body;
+        console.log('user token:',user)
+        const token=jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1d'})
+        res.cookie('token',token,{
+           httpOnly:true,
+           secure:process.env.NODE_ENV === 'production',
+           sameSite:process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+        })
+        res.send({success:true})
+        }catch(error){
+          res.send({
+            status:true,
+            error:error.message
+          })
+        }
+   })
+    
+   app.post('/logout',async(req,res)=>{
+       const user=req.body;
+       console.log('logOUt user',user)
+       res.clearCookie('token',{ 
+        maxAge: 0,
+        secure:process.env.NODE_ENV === 'production' ? true : false,
+        sameSite:process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+        })
+      .send({success:true})
+   })
+
+    // category related api
     app.get('/category',async(req,res)=>{
          const result=await categoryCollection.find().toArray()
          res.send(result)
@@ -53,34 +97,34 @@ async function run() {
     // bids related api
 
     app.get('/bids',async(req,res)=>{
-       const result=await categoryCollection.find().toArray();
+       const result=await bidsCollection.find().toArray();
        console.log(result)
        res.send(result)
     })
     
     app.post('/bids',async(req,res)=>{
        const bid=req.body;
-       const result=await categoryCollection.insertOne(bid);
+       const result=await bidsCollection.insertOne(bid);
        res.send(result);
     })
 
     app.get('/bids/:userEmail',async(req,res)=>{
       const userEmail=req.params.userEmail;
       const query={applicant:userEmail}
-      const result=await categoryCollection.find(query).toArray();
+      const result=await bidsCollection.find(query).toArray();
       res.send(result);
     })
 
     app.get('/bidReq/:userEmail',async(req,res)=>{
        const userEmail=req.params.userEmail
        const query={employer:userEmail}
-       const result=await categoryCollection.find(query).toArray()
+       const result=await bidsCollection.find(query).toArray()
        res.send(result)
     })
     app.get('/postedJobs/:userEmail',async(req,res)=>{
        const userEmail=req.params.userEmail
        const query={employer:userEmail}
-       const result=await categoryCollection.find(query).toArray()
+       const result=await bidsCollection.find(query).toArray()
        res.send(result)
     })
     // add job page related api
@@ -88,7 +132,7 @@ async function run() {
     app.post('/addJob',async(req,res)=>{
        const job=req.body;
        console.log(job);
-       const result=await categoryCollection.insertOne(job)
+       const result=await bidsCollection.insertOne(job)
        res.send(result)
     })
 
@@ -110,20 +154,51 @@ async function run() {
             
           }
         }
-        const result=await categoryCollection.updateOne(filter,job,options)
+        const result=await bidsCollection.updateOne(filter,job,options)
         res.send(result);
+    })
+
+    app.put('/acceptStatus/:id',async(req,res)=>{
+          const id=req.params.id;
+          const UpdateStatus=req.body;
+          const filter={_id : id}
+          const options={upsert:true}
+          
+          const status={
+            $set:{
+              status:UpdateStatus.status
+            }
+          }
+          const result=await bidsCollection.updateOne(filter,status,options)
+          console.log(result)
+          res.send(result)
+    })
+    app.put('/rejectStatus/:id',async(req,res)=>{
+      const id=req.params.id;
+      const UpdateStatus=req.body;
+      const filter={_id : id}
+      const options={upsert:true}
+      
+      const status={
+        $set:{
+          status:UpdateStatus.status
+        }
+      }
+      const result=await bidsCollection.updateOne(filter,status,options)
+      console.log(result)
+      res.send(result)
     })
 
     app.delete('/deleteJob/:id',async(req,res)=>{
         const id =req.params.id;
         console.log("delete id",id)
         const query={_id : new ObjectId(id)}
-        const result=await categoryCollection.deleteOne(query)
+        const result=await bidsCollection.deleteOne(query)
         res.send(result);
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
