@@ -36,7 +36,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
     const categoryCollection=client.db('categorydb').collection('categoryItem')
     const bidsCollection=client.db('categorydb').collection('bids')
@@ -121,10 +121,16 @@ async function run() {
        const result=await bidsCollection.find(query).toArray()
        res.send(result)
     })
-    app.get('/postedJobs/:userEmail',async(req,res)=>{
-       const userEmail=req.params.userEmail
-       const query={employer:userEmail}
-       const result=await bidsCollection.find(query).toArray()
+    app.get('/postedJobs',async(req,res)=>{
+       const userEmail=req.query?.email
+       console.log(userEmail)
+       let query={}
+       if(userEmail){
+          query = { employer : userEmail}
+       }
+      //  const query={employer:userEmail}
+      // console.log(query)
+       const result=await categoryCollection.find(query).toArray()
        res.send(result)
     })
     // add job page related api
@@ -132,7 +138,7 @@ async function run() {
     app.post('/addJob',async(req,res)=>{
        const job=req.body;
        console.log(job);
-       const result=await bidsCollection.insertOne(job)
+       const result=await categoryCollection.insertOne(job)
        res.send(result)
     })
 
@@ -154,46 +160,32 @@ async function run() {
             
           }
         }
-        const result=await bidsCollection.updateOne(filter,job,options)
+        const result=await categoryCollection.updateOne(filter,job,options)
         res.send(result);
     })
 
-    app.put('/acceptStatus/:id',async(req,res)=>{
+    app.patch('/status/:id',async(req,res)=>{
           const id=req.params.id;
           const UpdateStatus=req.body;
-          const filter={_id : id}
-          const options={upsert:true}
+          const filter={_id :new ObjectId(id)}
+          // const options={upsert:true}
           
           const status={
             $set:{
               status:UpdateStatus.status
             }
           }
-          const result=await bidsCollection.updateOne(filter,status,options)
+          const result=await bidsCollection.updateOne(filter,status)
           console.log(result)
           res.send(result)
     })
-    app.put('/rejectStatus/:id',async(req,res)=>{
-      const id=req.params.id;
-      const UpdateStatus=req.body;
-      const filter={_id : id}
-      const options={upsert:true}
-      
-      const status={
-        $set:{
-          status:UpdateStatus.status
-        }
-      }
-      const result=await bidsCollection.updateOne(filter,status,options)
-      console.log(result)
-      res.send(result)
-    })
+    
 
     app.delete('/deleteJob/:id',async(req,res)=>{
         const id =req.params.id;
         console.log("delete id",id)
         const query={_id : new ObjectId(id)}
-        const result=await bidsCollection.deleteOne(query)
+        const result=await categoryCollection.deleteOne(query)
         res.send(result);
     })
 
