@@ -119,8 +119,9 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/bidReq/:userEmail',async(req,res)=>{
-       const userEmail=req.params.userEmail
+    app.get('/bidsReq',async(req,res)=>{
+       const userEmail=req.query?.email
+       console.log(userEmail)
        const query={employer:userEmail}
        const result=await bidsCollection.find(query).toArray()
        res.send(result)
@@ -168,11 +169,18 @@ async function run() {
         res.send(result);
     })
 
+    app.get('/status/:id',async(req,res)=>{
+      const id =req.params.id;
+       const query={_id : new ObjectId(id)}
+       const result=await bidsCollection.findOne(query)
+       res.send(result)
+    })
+
     app.patch('/status/:id',async(req,res)=>{
           const id=req.params.id;
           const UpdateStatus=req.body;
 
-          // console.log(id,UpdateStatus)
+          console.log(id,UpdateStatus)
           const filter={_id :new ObjectId(id)}
           // const options={upsert:true}
           
