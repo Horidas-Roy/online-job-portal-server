@@ -108,9 +108,13 @@ async function run() {
        res.send(result);
     })
 
-    app.get('/bids/:userEmail',async(req,res)=>{
-      const userEmail=req.params.userEmail;
-      const query={applicant:userEmail}
+    app.get('/myBids',async(req,res)=>{
+      const userEmail=req.query?.userEmail;
+      const query={}
+      if(userEmail){
+          query={ applicant : userEmail}
+      }
+      // const query={applicant:userEmail}
       const result=await bidsCollection.find(query).toArray();
       res.send(result);
     })
@@ -167,6 +171,8 @@ async function run() {
     app.patch('/status/:id',async(req,res)=>{
           const id=req.params.id;
           const UpdateStatus=req.body;
+
+          // console.log(id,UpdateStatus)
           const filter={_id :new ObjectId(id)}
           // const options={upsert:true}
           
@@ -175,6 +181,7 @@ async function run() {
               status:UpdateStatus.status
             }
           }
+          // console.log(status)
           const result=await bidsCollection.updateOne(filter,status)
           console.log(result)
           res.send(result)
