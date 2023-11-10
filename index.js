@@ -74,6 +74,21 @@ async function run() {
       .send({success:true})
    })
 
+   //verify token
+   const verifyToken=async(req,res,next)=>{
+     const token=req.cookies?.token
+     if(!token){
+      return res.status(401).send('Unathorized access')
+     }
+     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(error,decoded)=>{
+         if(error){
+            return res.status(401).send({message:'forbidden access'})
+         }
+         req.decoded=decoded
+         next()
+     })
+   }
+
     // category related api
     app.get('/category',async(req,res)=>{
          const result=await categoryCollection.find().toArray()
